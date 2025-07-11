@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-st.set_page_config(layout="centered", page_title="Plotador de Funções")
+# --- Configuração do Layout da Página ---
+st.set_page_config(layout="wide", page_title="Plotador de Funções")
 
 st.title("Plotador de Funções 2D e 3D")
 
@@ -24,6 +25,7 @@ if plot_type == "2D":
         1. Parte Superior: `np.sqrt(R**2 - x**2)`
         2. Parte Inferior: `-np.sqrt(R**2 - x**2)`
         Onde `R` é o raio do círculo. Defina os limites de `x` de `-R` a `R`.
+        **Marque a opção "É uma circunferência?" para o ajuste correto do gráfico.**
     
     **Outras Sintaxes:**
     * **Raiz Quadrada:** `np.sqrt(x)` ou `x**0.5`
@@ -36,14 +38,14 @@ if plot_type == "2D":
     * **Operações Básicas:** `+`, `-`, `*`, `/`
     """)
     
-    # Input para a primeira função
     function_str = st.text_input("Função Principal (em termos de 'x'):", "np.sin(x)", help="Ex: np.sin(x) ou np.sqrt(4 - x**2) para a parte superior do círculo.")
     
-    # Input opcional para a segunda função (para círculos)
     plot_secondary = st.checkbox("Plotar uma segunda função (útil para círculos completos)?")
     secondary_function_str = ""
     if plot_secondary:
         secondary_function_str = st.text_input("Segunda Função (para círculo completo ou outra curva):", "-np.sqrt(4 - x**2)", help="Ex: -np.sqrt(4 - x**2) para a parte inferior do círculo.")
+    
+    is_circle = st.checkbox("É uma circunferência (para ajuste correto de escala)?", value=False, help="Marque esta opção se estiver plotando um círculo para que ele apareça redondo.")
 
 else: # 3D
     st.write("Use **'x'** e **'y'** como suas variáveis.")
@@ -67,7 +69,6 @@ st.write("---")
 if plot_type == "2D":
     st.header("Plotagem 2D")
 
-    # Limites do eixo X
     col1, col2 = st.columns(2)
     with col1:
         x_min = st.number_input("Valor mínimo de x:", value=-5.0, step=0.5)
@@ -81,22 +82,28 @@ if plot_type == "2D":
             try:
                 x = np.linspace(x_min, x_max, 500)
                 
-                # Plotar a função principal
                 y = eval(function_str, {"np": np}, {"x": x})
-                fig, ax = plt.subplots(figsize=(7, 4))
-                ax.plot(x, y, label=function_str) # Adiciona label para a legenda
+                
+                # figsize pode ser ajustado para tirar proveito da largura maior, se desejar
+                fig, ax = plt.subplots(figsize=(10, 5)) # Exemplo: largura 10, altura 5 para aproveitar o wide
+                
+                ax.plot(x, y, label=function_str)
 
-                # Plotar a segunda função, se fornecida
                 if plot_secondary and secondary_function_str.strip():
                     y_secondary = eval(secondary_function_str, {"np": np}, {"x": x})
-                    ax.plot(x, y_secondary, label=secondary_function_str, linestyle='--') # Linha tracejada para diferenciar
+                    ax.plot(x, y_secondary, label=secondary_function_str, linestyle='--')
 
                 ax.set_title(f"Gráfico 2D", fontsize=10)
                 ax.set_xlabel("x", fontsize=9)
                 ax.set_ylabel("y", fontsize=9)
                 ax.grid(True)
-                ax.legend() # Mostra a legenda com os nomes das funções
-                ax.set_aspect('equal', adjustable='box') # Isso é crucial para que círculos pareçam círculos
+                ax.legend()
+                
+                if is_circle:
+                    ax.set_aspect('equal', adjustable='box')
+                else:
+                    ax.set_aspect('auto')
+                
                 plt.tight_layout()
                 
                 st.pyplot(fig)
@@ -107,14 +114,18 @@ else: # plot_type == "3D"
     st.header("Plotagem 3D")
     st.write("O gráfico 3D é interativo. Você pode arrastar para rotacionar.")
 
-    # Limites dos eixos X e Y
     col1, col2 = st.columns(2)
     with col1:
         x_min_3d = st.number_input("Valor mínimo de x (3D):", value=-5.0, step=0.5)
-        x_max_3d = st.number_input("Valor máximo de x (3D):", value=5.0, step=0.5)
     with col2:
         y_min_3d = st.number_input("Valor mínimo de y (3D):", value=-5.0, step=0.5)
+    
+    col3, col4 = st.columns(2) # Usando novas colunas para x_max e y_max
+    with col3:
+        x_max_3d = st.number_input("Valor máximo de x (3D):", value=5.0, step=0.5)
+    with col4:
         y_max_3d = st.number_input("Valor máximo de y (3D):", value=5.0, step=0.5)
+
 
     if st.button("Plotar Gráfico 3D"):
         if not function_str.strip():
@@ -137,13 +148,12 @@ else: # plot_type == "3D"
                         zaxis_title='Z',
                     ),
                     margin=dict(l=0, r=0, b=0, t=40),
-                    height=500
+                    height=500 # Altura fixa para o gráfico Plotly 3D
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True) # use_container_width=True faz ele usar 100% da largura disponível
             except Exception as e:
                 st.error(f"Erro ao plotar a função 3D: {e}. Verifique a sintaxe da função e os exemplos acima.")
-
 
 
 ### Exemplos de Funções para o Usuário
@@ -167,6 +177,11 @@ st.markdown("""
 13. `np.floor(x)` (Parte Inteira)
 14. `np.ceil(x)` (Teto)
 15. `2*x + 1` (Linha Reta)
+16. **Círculo Completo (Exemplo de Raio 2):**
+    * **Função Principal:** `np.sqrt(4 - x**2)`
+    * **Segunda Função:** `-np.sqrt(4 - x**2)`
+    * **Limites de X:** `-2.0` a `2.0`
+    * **IMPORTANTE:** Marque a caixa "É uma circunferência?"
 
 **Funções 3D:**
 1.  `x**2 + y**2` (Paraboloide)
@@ -185,29 +200,3 @@ st.markdown("""
 14. `np.cos(x) * np.cos(y) * np.exp(-(x**2 + y**2)/5)`
 15. `(x-1)**2 + (y+2)**2` (Paraboloide deslocado)
 """)
-
-"""
-
-### O Que Mudou e Como Usar:
-
-1.  **Plotly para 3D:**
-    * Substituí a plotagem 3D do Matplotlib por **Plotly**.
-    * `import plotly.graph_objects as go` foi adicionado.
-    * No bloco `else` (para 3D), você verá `fig = go.Figure(data=[go.Surface(z=Z, x=X, y=Y, colorscale='viridis')])` para criar a superfície 3D.
-    * `st.plotly_chart(fig, use_container_width=True)` agora exibe o gráfico Plotly.
-    * A beleza do Plotly é que ele é **interativo por padrão**. O usuário pode **clicar e arrastar o gráfico 3D para rotacioná-lo, além de dar zoom e pan**.
-    * **Removi os sliders de rotação manual para 3D** porque a interatividade do Plotly os torna redundantes e a experiência de arrastar é muito melhor. Adicionei uma nota na interface informando que o gráfico é interativo. Se, por algum motivo, você ainda quiser sliders de controle *estático* (para Matplotlib), posso reinserir, mas não seria a mesma interatividade.
-    * A altura do gráfico Plotly é controlada por `height=500` no `fig.update_layout`.
-
-2.  **Lista de Exemplos:**
-    * Adicionei um `st.subheader("30 Exemplos de Funções para Experimentar")` e um longo bloco `st.markdown` no final do script.
-    * A lista é dividida em exemplos 2D e 3D para facilitar a referência do usuário.
-
-### Para Testar:
-
-1.  **Instale Plotly:** Se ainda não o fez, execute `pip install plotly` no seu terminal.
-2.  **Salve e Execute:** Salve o código como `app.py` e execute `streamlit run app.py`.
-
-Agora, ao selecionar a opção "3D", você verá um gráfico que pode ser livremente rotacionado com o mouse, e o usuário terá uma lista rica de exemplos para testar suas próprias funções.
-
-Faz sentido essa abordagem com Plotly para a interatividade 3D?"""
